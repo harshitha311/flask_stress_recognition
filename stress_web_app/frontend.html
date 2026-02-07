@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stress Recognition System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #434343 0%, #000000 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.466);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ffaf;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 30px;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f1ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8e9ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 50px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: block;
+            margin: 20px auto;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            display: none;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            margin-top: 30px;
+            padding: 30px;
+            background: #f8f9ff;
+            border-radius: 15px;
+        }
+
+        .result-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stress-level {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .stress-low { color: #10b981; }
+        .stress-moderate { color: #f59e0b; }
+        .stress-high { color: #ef4444; }
+
+        .classification {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .classification.low { background: #d1fae5; color: #065f46; }
+        .classification.moderate { background: #fed7aa; color: #92400e; }
+        .classification.high { background: #fee2e2; color: #991b1b; }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .file-info {
+            text-align: center;
+            margin: 20px 0;
+            color: #666;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Stress Recognition System</h1>
+        <p class="subtitle">Upload a video to analyze stress levels</p>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📹</div>
+            <p><strong>Click to upload</strong> or drag and drop</p>
+            <p style="color: #999; margin-top: 10px;">Supported formats: MP4, AVI, MOV, MKV (Max 100MB)</p>
+            <input type="file" id="fileInput" accept=".mp4,.avi,.mov,.mkv">
+        </div>
+
+        <div class="file-info" id="fileInfo"></div>
+
+        <button class="btn" id="analyzeBtn" style="display: none;">Analyze Video</button>
+
+        <div class="error" id="error"></div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 20px; color: #667eea; font-weight: bold;">Analyzing video...</p>
+        </div>
+
+        <div class="results" id="results">
+            <h2 style="text-align: center; margin-bottom: 20px; color: #333;">Analysis Results</h2>
+            <div class="result-card">
+                <div class="stress-level" id="stressLevel">0.00</div>
+                <div class="classification" id="classification">Unknown</div>
+                
+                <div class="metric">
+                    <span class="metric-label">Emotion-Based Stress:</span>
+                    <span class="metric-value" id="emotionStress">0.00</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Facial Tension:</span>
+                    <span class="metric-value" id="facialTension">0.00</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Stress Variability:</span>
+                    <span class="metric-value" id="stressVariability">0.00</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Off-Screen Time:</span>
+                    <span class="metric-value" id="offScreen">0.0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const fileInfo = document.getElementById('fileInfo');
+        const errorDiv = document.getElementById('error');
+
+        let selectedFile = null;
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // File selection
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file) return;
+
+            const validTypes = ['video/mp4', 'video/avi', 'video/x-msvideo', 'video/quicktime', 'video/x-matroska'];
+            if (!validTypes.includes(file.type) && !file.name.match(/\.(mp4|avi|mov|mkv)$/i)) {
+                showError('Invalid file type. Please upload MP4, AVI, MOV, or MKV.');
+                return;
+            }
+
+            if (file.size > 100 * 1024 * 1024) {
+                showError('File too large. Maximum size is 100MB.');
+                return;
+            }
+
+            selectedFile = file;
+            fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            analyzeBtn.style.display = 'block';
+            results.style.display = 'none';
+            errorDiv.style.display = 'none';
+        }
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+
+            loading.style.display = 'block';
+            analyzeBtn.disabled = true;
+            results.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('http://localhost:5000/api/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Analysis failed');
+                }
+
+                displayResults(data.results);
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            } finally {
+                loading.style.display = 'none';
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        function displayResults(data) {
+            document.getElementById('stressLevel').textContent = data.overall_stress.toFixed(2);
+            document.getElementById('classification').textContent = data.classification;
+            document.getElementById('emotionStress').textContent = data.emotion_based_stress.toFixed(2);
+            document.getElementById('facialTension').textContent = data.facial_tension.toFixed(2);
+            document.getElementById('stressVariability').textContent = data.stress_variability.toFixed(2);
+            document.getElementById('offScreen').textContent = `${data.off_screen_percentage.toFixed(1)}%`;
+
+            // Set colors based on stress level
+            const stressLevel = document.getElementById('stressLevel');
+            const classification = document.getElementById('classification');
+            
+            stressLevel.className = 'stress-level';
+            classification.className = 'classification';
+
+            if (data.overall_stress < 0.3) {
+                stressLevel.classList.add('stress-low');
+                classification.classList.add('low');
+            } else if (data.overall_stress < 0.6) {
+                stressLevel.classList.add('stress-moderate');
+                classification.classList.add('moderate');
+            } else {
+                stressLevel.classList.add('stress-high');
+                classification.classList.add('high');
+            }
+
+            results.style.display = 'block';
+        }
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
