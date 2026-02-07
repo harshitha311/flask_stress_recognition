@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+.env
+*.h5
+*.pt
+*.pth
+*.mp4
+*.avi
+.DS_Store
