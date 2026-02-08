@@ -13,15 +13,16 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #434343 0%, #000000 100%);
+            background: linear-gradient(135deg, #2f2f2f 0%, #1f1f1f 100%);
+            background-size: cover;
             min-height: 100vh;
             padding: 20px;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.466);
+            background: rgba(255, 255, 255, 0.486);
             border-radius: 20px;
             padding: 40px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -40,12 +41,66 @@
             margin-bottom: 40px;
         }
 
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            max-width: 300px;
+            padding: 20px;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.671);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .mode-btn:hover {
+            background: #f8f9ff;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .mode-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .mode-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .mode-desc {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .analysis-section {
+            display: none;
+        }
+
+        .analysis-section.active {
+            display: block;
+        }
+
         .upload-area {
             border: 3px dashed #667eea;
             border-radius: 15px;
             padding: 40px;
             text-align: center;
-            background: #f8f9ffaf;
+            background: #f8f9ff;
             cursor: pointer;
             transition: all 0.3s;
             margin-bottom: 30px;
@@ -196,24 +251,51 @@
 <body>
     <div class="container">
         <h1>🧠 Stress Recognition System</h1>
-        <p class="subtitle">Upload a video to analyze stress levels</p>
+        <p class="subtitle">Choose your analysis type and upload a file</p>
 
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-icon">📹</div>
-            <p><strong>Click to upload</strong> or drag and drop</p>
-            <p style="color: #999; margin-top: 10px;">Supported formats: MP4, AVI, MOV, MKV (Max 100MB)</p>
-            <input type="file" id="fileInput" accept=".mp4,.avi,.mov,.mkv">
+        <!-- Mode Selector -->
+        <div class="mode-selector">
+            <div class="mode-btn active" id="videoModeBtn" onclick="switchMode('video')">
+                <div class="mode-icon">📹</div>
+                <div class="mode-title">Video Analysis</div>
+                <div class="mode-desc">Analyze facial expressions</div>
+            </div>
+            <div class="mode-btn" id="audioModeBtn" onclick="switchMode('audio')">
+                <div class="mode-icon">🎤</div>
+                <div class="mode-title">Audio Analysis</div>
+                <div class="mode-desc">Analyze voice patterns</div>
+            </div>
         </div>
 
-        <div class="file-info" id="fileInfo"></div>
+        <!-- Video Analysis Section -->
+        <div class="analysis-section active" id="videoSection">
+            <div class="upload-area" id="videoUploadArea">
+                <div class="upload-icon">📹</div>
+                <p><strong>Click to upload</strong> or drag and drop</p>
+                <p style="color: #999; margin-top: 10px;">Supported formats: MP4, AVI, MOV, MKV (Max 100MB)</p>
+                <input type="file" id="videoFileInput" accept=".mp4,.avi,.mov,.mkv">
+            </div>
+            <div class="file-info" id="videoFileInfo"></div>
+            <button class="btn" id="videoAnalyzeBtn" style="display: none;">Analyze Video</button>
+        </div>
 
-        <button class="btn" id="analyzeBtn" style="display: none;">Analyze Video</button>
+        <!-- Audio Analysis Section -->
+        <div class="analysis-section" id="audioSection">
+            <div class="upload-area" id="audioUploadArea">
+                <div class="upload-icon">🎤</div>
+                <p><strong>Click to upload</strong> or drag and drop</p>
+                <p style="color: #999; margin-top: 10px;">Supported formats: WAV, MP3, M4A (Max 50MB)</p>
+                <input type="file" id="audioFileInput" accept=".wav,.mp3,.m4a">
+            </div>
+            <div class="file-info" id="audioFileInfo"></div>
+            <button class="btn" id="audioAnalyzeBtn" style="display: none;">Analyze Audio</button>
+        </div>
 
         <div class="error" id="error"></div>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p style="margin-top: 20px; color: #667eea; font-weight: bold;">Analyzing video...</p>
+            <p style="margin-top: 20px; color: #667eea; font-weight: bold;">Analyzing...</p>
         </div>
 
         <div class="results" id="results">
@@ -222,95 +304,133 @@
                 <div class="stress-level" id="stressLevel">0.00</div>
                 <div class="classification" id="classification">Unknown</div>
                 
-                <div class="metric">
-                    <span class="metric-label">Emotion-Based Stress:</span>
-                    <span class="metric-value" id="emotionStress">0.00</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Facial Tension:</span>
-                    <span class="metric-value" id="facialTension">0.00</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Stress Variability:</span>
-                    <span class="metric-value" id="stressVariability">0.00</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Off-Screen Time:</span>
-                    <span class="metric-value" id="offScreen">0.0%</span>
+                <div id="metricsContainer">
+                    <!-- Metrics will be inserted here dynamically -->
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const loading = document.getElementById('loading');
-        const results = document.getElementById('results');
-        const fileInfo = document.getElementById('fileInfo');
-        const errorDiv = document.getElementById('error');
-
+        let currentMode = 'video';
         let selectedFile = null;
 
-        // Click to upload
-        uploadArea.addEventListener('click', () => fileInput.click());
+        // Mode switching
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // Update buttons
+            document.getElementById('videoModeBtn').classList.remove('active');
+            document.getElementById('audioModeBtn').classList.remove('active');
+            document.getElementById(mode + 'ModeBtn').classList.add('active');
+            
+            // Update sections
+            document.getElementById('videoSection').classList.remove('active');
+            document.getElementById('audioSection').classList.remove('active');
+            document.getElementById(mode + 'Section').classList.add('active');
+            
+            // Reset
+            selectedFile = null;
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+        }
 
-        // File selection
-        fileInput.addEventListener('change', (e) => {
-            handleFile(e.target.files[0]);
-        });
+        // Video upload handlers
+        const videoUploadArea = document.getElementById('videoUploadArea');
+        const videoFileInput = document.getElementById('videoFileInput');
+        const videoAnalyzeBtn = document.getElementById('videoAnalyzeBtn');
+        const videoFileInfo = document.getElementById('videoFileInfo');
 
-        // Drag and drop
-        uploadArea.addEventListener('dragover', (e) => {
+        videoUploadArea.addEventListener('click', () => videoFileInput.click());
+        videoFileInput.addEventListener('change', (e) => handleFile(e.target.files[0], 'video'));
+
+        videoUploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadArea.classList.add('dragover');
+            videoUploadArea.classList.add('dragover');
         });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
+        videoUploadArea.addEventListener('dragleave', () => videoUploadArea.classList.remove('dragover'));
+        videoUploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            handleFile(e.dataTransfer.files[0]);
+            videoUploadArea.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0], 'video');
         });
 
-        function handleFile(file) {
+        // Audio upload handlers
+        const audioUploadArea = document.getElementById('audioUploadArea');
+        const audioFileInput = document.getElementById('audioFileInput');
+        const audioAnalyzeBtn = document.getElementById('audioAnalyzeBtn');
+        const audioFileInfo = document.getElementById('audioFileInfo');
+
+        audioUploadArea.addEventListener('click', () => audioFileInput.click());
+        audioFileInput.addEventListener('change', (e) => handleFile(e.target.files[0], 'audio'));
+
+        audioUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            audioUploadArea.classList.add('dragover');
+        });
+        audioUploadArea.addEventListener('dragleave', () => audioUploadArea.classList.remove('dragover'));
+        audioUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            audioUploadArea.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0], 'audio');
+        });
+
+        function handleFile(file, type) {
             if (!file) return;
 
-            const validTypes = ['video/mp4', 'video/avi', 'video/x-msvideo', 'video/quicktime', 'video/x-matroska'];
-            if (!validTypes.includes(file.type) && !file.name.match(/\.(mp4|avi|mov|mkv)$/i)) {
-                showError('Invalid file type. Please upload MP4, AVI, MOV, or MKV.');
-                return;
-            }
+            const validVideoTypes = ['video/mp4', 'video/avi', 'video/x-msvideo', 'video/quicktime', 'video/x-matroska'];
+            const validAudioTypes = ['audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/x-m4a', 'audio/m4a'];
 
-            if (file.size > 100 * 1024 * 1024) {
-                showError('File too large. Maximum size is 100MB.');
-                return;
+            if (type === 'video') {
+                if (!validVideoTypes.includes(file.type) && !file.name.match(/\.(mp4|avi|mov|mkv)$/i)) {
+                    showError('Invalid file type. Please upload MP4, AVI, MOV, or MKV.');
+                    return;
+                }
+                if (file.size > 100 * 1024 * 1024) {
+                    showError('File too large. Maximum size is 100MB.');
+                    return;
+                }
+            } else {
+                if (!validAudioTypes.includes(file.type) && !file.name.match(/\.(wav|mp3|m4a)$/i)) {
+                    showError('Invalid file type. Please upload WAV, MP3, or M4A.');
+                    return;
+                }
+                if (file.size > 50 * 1024 * 1024) {
+                    showError('File too large. Maximum size is 50MB.');
+                    return;
+                }
             }
 
             selectedFile = file;
+            const fileInfo = type === 'video' ? videoFileInfo : audioFileInfo;
+            const analyzeBtn = type === 'video' ? videoAnalyzeBtn : audioAnalyzeBtn;
+            
             fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
             analyzeBtn.style.display = 'block';
-            results.style.display = 'none';
-            errorDiv.style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
         }
 
-        analyzeBtn.addEventListener('click', async () => {
+        // Analyze buttons
+        videoAnalyzeBtn.addEventListener('click', () => analyzeFile('video'));
+        audioAnalyzeBtn.addEventListener('click', () => analyzeFile('audio'));
+
+        async function analyzeFile(type) {
             if (!selectedFile) return;
 
             const formData = new FormData();
-            formData.append('video', selectedFile);
+            const endpoint = type === 'video' ? '/api/analyze' : '/api/analyze-audio';
+            const fileKey = type === 'video' ? 'video' : 'audio';
+            formData.append(fileKey, selectedFile);
 
-            loading.style.display = 'block';
+            document.getElementById('loading').style.display = 'block';
+            const analyzeBtn = type === 'video' ? videoAnalyzeBtn : audioAnalyzeBtn;
             analyzeBtn.disabled = true;
-            results.style.display = 'none';
-            errorDiv.style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
 
             try {
-                const response = await fetch('http://localhost:5000/api/analyze', {
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 });
@@ -321,22 +441,62 @@
                     throw new Error(data.error || 'Analysis failed');
                 }
 
-                displayResults(data.results);
+                displayResults(data.results, type);
             } catch (error) {
                 showError(`Error: ${error.message}`);
             } finally {
-                loading.style.display = 'none';
+                document.getElementById('loading').style.display = 'none';
                 analyzeBtn.disabled = false;
             }
-        });
+        }
 
-        function displayResults(data) {
+        function displayResults(data, type) {
             document.getElementById('stressLevel').textContent = data.overall_stress.toFixed(2);
             document.getElementById('classification').textContent = data.classification;
-            document.getElementById('emotionStress').textContent = data.emotion_based_stress.toFixed(2);
-            document.getElementById('facialTension').textContent = data.facial_tension.toFixed(2);
-            document.getElementById('stressVariability').textContent = data.stress_variability.toFixed(2);
-            document.getElementById('offScreen').textContent = `${data.off_screen_percentage.toFixed(1)}%`;
+
+            // Build metrics based on type
+            const metricsContainer = document.getElementById('metricsContainer');
+            metricsContainer.innerHTML = '';
+
+            if (type === 'video') {
+                metricsContainer.innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Emotion-Based Stress:</span>
+                        <span class="metric-value">${data.emotion_based_stress.toFixed(2)}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Facial Tension:</span>
+                        <span class="metric-value">${data.facial_tension.toFixed(2)}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Stress Variability:</span>
+                        <span class="metric-value">${data.stress_variability.toFixed(2)}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Off-Screen Time:</span>
+                        <span class="metric-value">${data.off_screen_percentage.toFixed(1)}%</span>
+                    </div>
+                `;
+            } else {
+                metricsContainer.innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Detected Emotion:</span>
+                        <span class="metric-value">${data.detected_emotion || 'N/A'}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Confidence:</span>
+                        <span class="metric-value">${((data.emotion_confidence || 0) * 100).toFixed(1)}%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Vocal Stress Score:</span>
+                        <span class="metric-value">${data.vocal_stress || 'N/A'}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Audio Features:</span>
+                        <span class="metric-value">${data.audio_features || 'N/A'}</span>
+                    </div>
+                `;
+            }
 
             // Set colors based on stress level
             const stressLevel = document.getElementById('stressLevel');
@@ -356,12 +516,12 @@
                 classification.classList.add('high');
             }
 
-            results.style.display = 'block';
+            document.getElementById('results').style.display = 'block';
         }
 
         function showError(message) {
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+            document.getElementById('error').textContent = message;
+            document.getElementById('error').style.display = 'block';
         }
     </script>
 </body>

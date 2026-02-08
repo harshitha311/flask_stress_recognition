@@ -1,9 +1,16 @@
+# Flask Backend
 flask==3.0.0
 flask-cors==4.0.0
 werkzeug==3.0.1
+
+# Video Stress Detection
 fer==22.5.1
 opencv-python==4.13.0.92
 tensorflow==2.20.0
 termcolor==3.2.0
 numpy==2.2.3
 torch==2.10.0
+
+# Audio Stress Detection
+librosa==0.10.1
+soundfile==0.12.1
