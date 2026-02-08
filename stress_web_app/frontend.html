@@ -44,13 +44,15 @@
         .mode-selector {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 40px;
+            flex-wrap: wrap;
         }
 
         .mode-btn {
             flex: 1;
-            max-width: 300px;
+            min-width: 200px;
+            max-width: 280px;
             padding: 20px;
             border: 3px solid #667eea;
             border-radius: 15px;
@@ -95,6 +97,71 @@
             display: block;
         }
 
+        /* Real-time Video Styles */
+        .video-container {
+            position: relative;
+            max-width: 640px;
+            margin: 0 auto 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        #webcam {
+            width: 100%;
+            display: block;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .realtime-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* Upload Area Styles */
         .upload-area {
             border: 3px dashed #667eea;
             border-radius: 15px;
@@ -137,8 +204,6 @@
             font-weight: bold;
             cursor: pointer;
             transition: transform 0.2s;
-            display: block;
-            margin: 20px auto;
         }
 
         .btn:hover {
@@ -148,6 +213,16 @@
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-center {
+            display: block;
+            margin: 20px auto;
         }
 
         .loading {
@@ -246,29 +321,63 @@
             margin: 20px 0;
             display: none;
         }
+
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🧠 Stress Recognition System</h1>
-        <p class="subtitle">Choose your analysis type and upload a file</p>
+        <p class="subtitle">Real-time webcam or upload video/audio for analysis</p>
 
         <!-- Mode Selector -->
         <div class="mode-selector">
-            <div class="mode-btn active" id="videoModeBtn" onclick="switchMode('video')">
+            <div class="mode-btn active" id="realtimeModeBtn" onclick="switchMode('realtime')">
                 <div class="mode-icon">📹</div>
-                <div class="mode-title">Video Analysis</div>
-                <div class="mode-desc">Analyze facial expressions</div>
+                <div class="mode-title">Real-time Video</div>
+                <div class="mode-desc">Live webcam analysis</div>
+            </div>
+            <div class="mode-btn" id="videoModeBtn" onclick="switchMode('video')">
+                <div class="mode-icon">📤</div>
+                <div class="mode-title">Upload Video</div>
+                <div class="mode-desc">Analyze video file</div>
             </div>
             <div class="mode-btn" id="audioModeBtn" onclick="switchMode('audio')">
                 <div class="mode-icon">🎤</div>
-                <div class="mode-title">Audio Analysis</div>
-                <div class="mode-desc">Analyze voice patterns</div>
+                <div class="mode-title">Upload Audio</div>
+                <div class="mode-desc">Analyze audio file</div>
             </div>
         </div>
 
-        <!-- Video Analysis Section -->
-        <div class="analysis-section active" id="videoSection">
+        <!-- Real-time Video Section -->
+        <div class="analysis-section active" id="realtimeSection">
+            <div class="video-container">
+                <video id="webcam" autoplay playsinline></video>
+                <div class="video-overlay" id="realtimeOverlay">
+                    Click "Start Analysis" to begin
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" id="startBtn" onclick="startRealtime()">
+                    Start Analysis
+                </button>
+                <button class="btn btn-danger" id="stopBtn" onclick="stopRealtime()" disabled>
+                    Stop Analysis
+                </button>
+            </div>
+
+            <div id="realtimeResults"></div>
+        </div>
+
+        <!-- Video Upload Section -->
+        <div class="analysis-section" id="videoSection">
             <div class="upload-area" id="videoUploadArea">
                 <div class="upload-icon">📹</div>
                 <p><strong>Click to upload</strong> or drag and drop</p>
@@ -276,10 +385,10 @@
                 <input type="file" id="videoFileInput" accept=".mp4,.avi,.mov,.mkv">
             </div>
             <div class="file-info" id="videoFileInfo"></div>
-            <button class="btn" id="videoAnalyzeBtn" style="display: none;">Analyze Video</button>
+            <button class="btn btn-center" id="videoAnalyzeBtn" style="display: none;">Analyze Video</button>
         </div>
 
-        <!-- Audio Analysis Section -->
+        <!-- Audio Upload Section -->
         <div class="analysis-section" id="audioSection">
             <div class="upload-area" id="audioUploadArea">
                 <div class="upload-icon">🎤</div>
@@ -288,7 +397,7 @@
                 <input type="file" id="audioFileInput" accept=".wav,.mp3,.m4a">
             </div>
             <div class="file-info" id="audioFileInfo"></div>
-            <button class="btn" id="audioAnalyzeBtn" style="display: none;">Analyze Audio</button>
+            <button class="btn btn-center" id="audioAnalyzeBtn" style="display: none;">Analyze Audio</button>
         </div>
 
         <div class="error" id="error"></div>
@@ -312,19 +421,30 @@
     </div>
 
     <script>
-        let currentMode = 'video';
+        const API_URL = 'http://localhost:5000';
+        let currentMode = 'realtime';
         let selectedFile = null;
+        let webcamStream = null;
+        let realtimeActive = false;
+        let realtimeInterval = null;
 
         // Mode switching
         function switchMode(mode) {
             currentMode = mode;
             
+            // Stop realtime if switching away
+            if (realtimeActive && mode !== 'realtime') {
+                stopRealtime();
+            }
+            
             // Update buttons
+            document.getElementById('realtimeModeBtn').classList.remove('active');
             document.getElementById('videoModeBtn').classList.remove('active');
             document.getElementById('audioModeBtn').classList.remove('active');
             document.getElementById(mode + 'ModeBtn').classList.add('active');
             
             // Update sections
+            document.getElementById('realtimeSection').classList.remove('active');
             document.getElementById('videoSection').classList.remove('active');
             document.getElementById('audioSection').classList.remove('active');
             document.getElementById(mode + 'Section').classList.add('active');
@@ -335,7 +455,133 @@
             document.getElementById('error').style.display = 'none';
         }
 
-        // Video upload handlers
+        // ==================== REAL-TIME VIDEO ====================
+        async function startRealtime() {
+            try {
+                // Start webcam
+                webcamStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 } 
+                });
+                document.getElementById('webcam').srcObject = webcamStream;
+
+                // Initialize backend session
+                const response = await fetch(`${API_URL}/api/realtime/start`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error);
+                }
+
+                realtimeActive = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('realtimeOverlay').textContent = 'Analyzing...';
+
+                // Start sending frames
+                realtimeInterval = setInterval(captureAndAnalyzeFrame, 1000);
+
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            }
+        }
+
+        async function captureAndAnalyzeFrame() {
+            if (!realtimeActive) return;
+
+            try {
+                const video = document.getElementById('webcam');
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+
+                const frameData = canvas.toDataURL('image/jpeg', 0.8);
+
+                const response = await fetch(`${API_URL}/api/realtime/frame`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ frame: frameData })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateRealtimeDisplay(data.result);
+                }
+            } catch (error) {
+                console.error('Frame analysis error:', error);
+            }
+        }
+
+        function updateRealtimeDisplay(result) {
+            const overlay = document.getElementById('realtimeOverlay');
+            overlay.innerHTML = `
+                Stress: ${result.overall_stress}% | 
+                ${result.classification} | 
+                Face: ${result.face_detected ? '✓' : '✗'}
+            `;
+
+            const resultsDiv = document.getElementById('realtimeResults');
+            resultsDiv.innerHTML = `
+                <div class="results" style="display: block;">
+                    <h2 style="text-align: center; margin-bottom: 20px; color: #333;">Real-time Analysis</h2>
+                    <div class="realtime-stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Overall Stress</div>
+                            <div class="stat-value ${getStressClass(result.overall_stress)}">${result.overall_stress}%</div>
+                            <div style="margin-top: 10px; font-weight: 600; color: #666;">${result.classification}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Emotion Stress</div>
+                            <div class="stat-value">${result.emotion_based_stress}%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Facial Tension</div>
+                            <div class="stat-value">${result.facial_tension}%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Face Detected</div>
+                            <div class="stat-value">${result.face_detected ? '✓' : '✗'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function stopRealtime() {
+            realtimeActive = false;
+            clearInterval(realtimeInterval);
+
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(track => track.stop());
+                webcamStream = null;
+            }
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('realtimeOverlay').textContent = 'Stopped';
+
+            try {
+                const response = await fetch(`${API_URL}/api/realtime/stop`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success && data.summary) {
+                    const summaryDiv = document.createElement('div');
+                    summaryDiv.className = 'success';
+                    summaryDiv.textContent = `Session complete! Average stress: ${data.summary.average_stress}%, Max: ${data.summary.max_stress}%`;
+                    document.getElementById('realtimeResults').appendChild(summaryDiv);
+                }
+            } catch (error) {
+                console.error('Error stopping session:', error);
+            }
+        }
+
+        // ==================== UPLOAD VIDEO ====================
         const videoUploadArea = document.getElementById('videoUploadArea');
         const videoFileInput = document.getElementById('videoFileInput');
         const videoAnalyzeBtn = document.getElementById('videoAnalyzeBtn');
@@ -355,7 +601,7 @@
             handleFile(e.dataTransfer.files[0], 'video');
         });
 
-        // Audio upload handlers
+        // ==================== UPLOAD AUDIO ====================
         const audioUploadArea = document.getElementById('audioUploadArea');
         const audioFileInput = document.getElementById('audioFileInput');
         const audioAnalyzeBtn = document.getElementById('audioAnalyzeBtn');
@@ -430,7 +676,7 @@
             document.getElementById('error').style.display = 'none';
 
             try {
-                const response = await fetch(endpoint, {
+                const response = await fetch(`${API_URL}${endpoint}`, {
                     method: 'POST',
                     body: formData
                 });
@@ -505,10 +751,10 @@
             stressLevel.className = 'stress-level';
             classification.className = 'classification';
 
-            if (data.overall_stress < 0.3) {
+            if (data.overall_stress < 30) {
                 stressLevel.classList.add('stress-low');
                 classification.classList.add('low');
-            } else if (data.overall_stress < 0.6) {
+            } else if (data.overall_stress < 60) {
                 stressLevel.classList.add('stress-moderate');
                 classification.classList.add('moderate');
             } else {
@@ -517,6 +763,12 @@
             }
 
             document.getElementById('results').style.display = 'block';
+        }
+
+        function getStressClass(stressLevel) {
+            if (stressLevel < 30) return 'stress-low';
+            if (stressLevel < 60) return 'stress-moderate';
+            return 'stress-high';
         }
 
         function showError(message) {
